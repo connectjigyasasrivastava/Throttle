@@ -27,6 +27,10 @@ public class TokenBucketRateLimiter {
         this.script.setResultType(List.class);
     }
 
+    public int capacity() {
+        return props.getCapacity();
+    }
+
     public RateLimitResult tryAcquire(String clientId) {
         String key = "rl:token_bucket:" + clientId;
         long now = System.currentTimeMillis();

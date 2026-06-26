@@ -31,12 +31,21 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String clientKey = keyResolver.resolve(request);
         RateLimitResult result = rateLimiter.tryAcquire(clientKey);
 
+        // Informational headers on every response.
+        response.setHeader("X-RateLimit-Limit", String.valueOf(rateLimiter.capacity()));
+        response.setHeader("X-RateLimit-Remaining", String.valueOf(result.remaining()));
+
         if (result.allowed()) {
             filterChain.doFilter(request, response); // pass through
         } else {
-            response.setStatus(429); // 429 Too Many Requests // 429
+            // Retry-After is conventionally in seconds; round up from ms.
+            long retryAfterSeconds = (result.retryAfterMs() + 999) / 1000;
+            response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));
+            response.setStatus(429); // 429 Too Many Requests
             response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"rate limit exceeded\"}");
+            response.getWriter().write(
+                    "{\"error\":\"rate limit exceeded\",\"retryAfterMs\":"
+                            + result.retryAfterMs() + "}");
         }
     }
 }
