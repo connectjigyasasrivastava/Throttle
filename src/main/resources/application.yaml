@@ -14,3 +14,7 @@ management:
 
 server:
   port: 8080
+
+ratelimit:
+  capacity: 10
+  refill-rate: 5.0
