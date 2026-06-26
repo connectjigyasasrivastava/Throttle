@@ -18,3 +18,4 @@ server:
 ratelimit:
   capacity: 10
   refill-rate: 5.0
+  path-prefix: /api

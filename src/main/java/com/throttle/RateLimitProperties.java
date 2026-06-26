@@ -11,6 +11,9 @@ public class RateLimitProperties {
     /** Tokens refilled per second (sustained rate). */
     private double refillRate = 5.0;
 
+    /** Only requests whose path starts with this prefix are rate limited. */
+    private String pathPrefix = "/api";
+
     public int getCapacity() {
         return capacity;
     }
@@ -25,5 +28,13 @@ public class RateLimitProperties {
 
     public void setRefillRate(double refillRate) {
         this.refillRate = refillRate;
+    }
+
+    public String getPathPrefix() {
+        return pathPrefix;
+    }
+
+    public void setPathPrefix(String pathPrefix) {
+        this.pathPrefix = pathPrefix;
     }
 }

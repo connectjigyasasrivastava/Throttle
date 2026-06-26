@@ -16,10 +16,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final TokenBucketRateLimiter rateLimiter;
     private final ClientKeyResolver keyResolver;
+    private final RateLimitProperties props;
 
-    public RateLimitFilter(TokenBucketRateLimiter rateLimiter, ClientKeyResolver keyResolver) {
+    public RateLimitFilter(TokenBucketRateLimiter rateLimiter,
+                           ClientKeyResolver keyResolver,
+                           RateLimitProperties props) {
         this.rateLimiter = rateLimiter;
         this.keyResolver = keyResolver;
+        this.props = props;
     }
 
     @Override
@@ -47,5 +51,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     "{\"error\":\"rate limit exceeded\",\"retryAfterMs\":"
                             + result.retryAfterMs() + "}");
         }
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Only rate limit paths under the configured prefix.
+        return !request.getRequestURI().startsWith(props.getPathPrefix());
     }
 }

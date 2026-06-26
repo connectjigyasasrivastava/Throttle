@@ -29,4 +29,9 @@ public class PingController {
         return String.format("allowed=%s remaining=%d retryAfterMs=%d",
                 r.allowed(), r.remaining(), r.retryAfterMs());
     }
+
+    @GetMapping("/api/demo")
+    public String demo() {
+        return "ok";
+    }
 }
