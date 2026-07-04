@@ -37,4 +37,26 @@ public class RateLimitProperties {
     public void setPathPrefix(String pathPrefix) {
         this.pathPrefix = pathPrefix;
     }
+
+    /** Max requests per window (used by sliding window algorithms). */
+    private int limit = 10;
+
+    /** Window size in milliseconds (used by sliding window algorithms). */
+    private long windowMs = 2000;
+
+    public int getLimit() {
+        return limit;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    public long getWindowMs() {
+        return windowMs;
+    }
+
+    public void setWindowMs(long windowMs) {
+        this.windowMs = windowMs;
+    }
 }
