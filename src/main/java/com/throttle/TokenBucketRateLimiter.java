@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
-public class TokenBucketRateLimiter {
+public class TokenBucketRateLimiter implements RateLimiter {
 
     private final StringRedisTemplate redis;
     private final RateLimitProperties props;
@@ -26,11 +26,11 @@ public class TokenBucketRateLimiter {
                 new ResourceScriptSource(new ClassPathResource("scripts/token_bucket.lua")));
         this.script.setResultType(List.class);
     }
-
+    @Override
     public int capacity() {
         return props.getCapacity();
     }
-
+    @Override
     public RateLimitResult tryAcquire(String clientId) {
         String key = "rl:token_bucket:" + clientId;
         long now = System.currentTimeMillis();
