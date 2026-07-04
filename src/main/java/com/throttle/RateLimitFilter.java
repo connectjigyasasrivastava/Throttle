@@ -55,7 +55,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Only rate limit paths under the configured prefix.
-        return !request.getRequestURI().startsWith(props.getPathPrefix());
+        String uri = request.getRequestURI();
+        // Never rate limit health/monitoring endpoints — load balancer
+        // health checks must always succeed.
+        if (uri.startsWith("/actuator")) {
+            return true;
+        }
+        // Otherwise, only rate limit paths under the configured prefix.
+        return !uri.startsWith(props.getPathPrefix());
     }
 }
