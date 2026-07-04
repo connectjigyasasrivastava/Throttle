@@ -1,42 +1,46 @@
--- KEYS[1] = key (e.g. "rl:sliding_log:<client>")
+-- KEYS[1] = key prefix (e.g. "rl:sliding_counter:<client>")
 -- ARGV[1] = limit (max requests per window)
 -- ARGV[2] = window_ms (window size in milliseconds)
 -- ARGV[3] = now (current time, ms)
 -- Returns: {allowed (1/0), remaining, retry_after_ms}
+--
+-- Approximates a rolling window using two fixed buckets (current + previous),
+-- weighting the previous bucket by how much of it still overlaps the window.
 
 local limit     = tonumber(ARGV[1])
 local window_ms = tonumber(ARGV[2])
 local now       = tonumber(ARGV[3])
 
-local window_start = now - window_ms
+-- Which fixed window are we in, and how far into it (0..1)?
+local current_window = math.floor(now / window_ms)
+local previous_window = current_window - 1
+local elapsed_in_current = (now % window_ms) / window_ms
 
--- Drop entries older than the window.
-redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, window_start)
+local current_key  = KEYS[1] .. ':' .. current_window
+local previous_key = KEYS[1] .. ':' .. previous_window
 
--- Count requests currently in the window.
-local count = redis.call('ZCARD', KEYS[1])
+local current_count  = tonumber(redis.call('GET', current_key))  or 0
+local previous_count = tonumber(redis.call('GET', previous_key)) or 0
+
+-- Weighted estimate: the previous window contributes the fraction of it
+-- that still lies inside the rolling window.
+local estimated = (previous_count * (1 - elapsed_in_current)) + current_count
 
 local allowed = 0
 local retry_after = 0
 
-if count < limit then
-  -- Record this request; member must be unique, so use now + a random suffix.
-  redis.call('ZADD', KEYS[1], now, now .. '-' .. math.random(1, 1000000))
+if estimated < limit then
+  redis.call('INCR', current_key)
+  -- Keep each fixed bucket for two windows so the previous one stays readable.
+  redis.call('PEXPIRE', current_key, window_ms * 2)
   allowed = 1
-  count = count + 1
+  estimated = estimated + 1
 else
-  -- Retry when the oldest request in the window falls out.
-  local oldest = redis.call('ZRANGE', KEYS[1], 0, 0, 'WITHSCORES')
-  if oldest[2] then
-    retry_after = (tonumber(oldest[2]) + window_ms) - now
-    if retry_after < 0 then retry_after = 0 end
-  end
+  -- Approximate wait: time left in the current fixed window.
+  retry_after = window_ms - (now % window_ms)
 end
 
--- Expire the key one window after now so idle clients clean up.
-redis.call('PEXPIRE', KEYS[1], window_ms)
-
-local remaining = limit - count
+local remaining = math.floor(limit - estimated)
 if remaining < 0 then remaining = 0 end
 
 return { allowed, remaining, retry_after }
