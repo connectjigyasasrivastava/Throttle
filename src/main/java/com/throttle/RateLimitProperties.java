@@ -59,4 +59,14 @@ public class RateLimitProperties {
     public void setWindowMs(long windowMs) {
         this.windowMs = windowMs;
     }
+    /** Which algorithm to use: token_bucket | sliding_window_log | sliding_window_counter. */
+    private String algorithm = "token_bucket";
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
 }

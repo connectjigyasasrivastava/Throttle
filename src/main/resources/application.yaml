@@ -16,6 +16,9 @@ server:
   port: 8080
 
 ratelimit:
+  algorithm: token_bucket
   capacity: 10
   refill-rate: 5.0
+  limit: 10
+  window-ms: 2000
   path-prefix: /api

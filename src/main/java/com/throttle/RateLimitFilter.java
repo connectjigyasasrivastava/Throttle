@@ -14,14 +14,14 @@ import java.io.IOException;
 @Order(1)
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private final TokenBucketRateLimiter rateLimiter;
+    private final RateLimiterProvider rateLimiterProvider;
     private final ClientKeyResolver keyResolver;
     private final RateLimitProperties props;
 
-    public RateLimitFilter(TokenBucketRateLimiter rateLimiter,
+    public RateLimitFilter(RateLimiterProvider rateLimiterProvider,
                            ClientKeyResolver keyResolver,
                            RateLimitProperties props) {
-        this.rateLimiter = rateLimiter;
+        this.rateLimiterProvider = rateLimiterProvider;
         this.keyResolver = keyResolver;
         this.props = props;
     }
@@ -32,6 +32,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        RateLimiter rateLimiter = rateLimiterProvider.get();
         String clientKey = keyResolver.resolve(request);
         RateLimitResult result = rateLimiter.tryAcquire(clientKey);
 
